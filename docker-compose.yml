@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: booktrakd
+      POSTGRES_PASSWORD: booktrakd
+      POSTGRES_DB: booktrakd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # The catalog import is write-heavy; give Postgres room to work.
+    command: >
+      postgres
+      -c shared_buffers=1GB
+      -c maintenance_work_mem=1GB
+      -c work_mem=64MB
+      -c max_wal_size=8GB
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.15
+    environment:
+      MEILI_MASTER_KEY: dev-master-key-change-me
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meilidata:/meili_data
+
+volumes:
+  pgdata:
+  meilidata:

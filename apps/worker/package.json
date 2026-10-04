@@ -1,0 +1,20 @@
+{
+  "name": "@booktrakd/worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cli": "tsx src/cli.ts",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@booktrakd/db": "workspace:*",
+    "@booktrakd/ui-tokens": "workspace:*",
+    "dotenv": "^18.0.5",
+    "meilisearch": "^0.62.0",
+    "pg-boss": "^12.36.0",
+    "postgres": "^3.4.9",
+    "sharp": "^0.35.5"
+  }
+}

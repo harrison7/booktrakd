@@ -1,0 +1,16 @@
+{
+  "name": "@booktrakd/auth",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@better-auth/expo": "^1.7.7",
+    "@booktrakd/db": "workspace:*",
+    "better-auth": "^1.7.7"
+  }
+}

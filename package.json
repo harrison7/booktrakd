@@ -1,0 +1,28 @@
+{
+  "name": "booktrakd",
+  "private": true,
+  "packageManager": "pnpm@10.33.4",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "db:generate": "pnpm --filter @booktrakd/db generate",
+    "db:migrate": "pnpm --filter @booktrakd/db migrate",
+    "db:seed": "pnpm --filter @booktrakd/db seed",
+    "import": "pnpm --filter @booktrakd/worker cli import",
+    "covers": "pnpm --filter @booktrakd/worker cli covers",
+    "worker": "pnpm --filter @booktrakd/worker cli worker"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.7",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+.turbo/
+.env
+.env.local
+dist/
+*.log
+
+# Open Library dumps and locally cached covers
+.data/
