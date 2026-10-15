@@ -13,9 +13,7 @@
     "db:generate": "pnpm --filter @booktrakd/db generate",
     "db:migrate": "pnpm --filter @booktrakd/db migrate",
     "db:seed": "pnpm --filter @booktrakd/db seed",
-    "import": "pnpm --filter @booktrakd/worker cli import",
-    "covers": "pnpm --filter @booktrakd/worker cli covers",
-    "worker": "pnpm --filter @booktrakd/worker cli worker"
+    "cli": "pnpm --filter @booktrakd/worker cli"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
