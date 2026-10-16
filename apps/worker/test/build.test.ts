@@ -72,6 +72,10 @@ describe("buildCatalog", () => {
     expect(edit).toMatchObject({ object_type: "work", action: "merge" });
   });
 
+  it("uses the earliest edition year when Open Library's work year is later", async () => {
+    expect((await workByOlId(db, "OL5W"))?.first_published_year).toBe(1818);
+  });
+
   it("reports ambiguous duplicates (generic titles) instead of merging them", async () => {
     expect(firstRun.reported).toBe(1);
     const poems = await query(

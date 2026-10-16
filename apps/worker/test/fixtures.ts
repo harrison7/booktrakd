@@ -45,6 +45,7 @@ export const WORKS = [
     title: "Frankenstein; or, The Modern Prometheus",
     authors: by("OL3A"),
     subjects: ["Horror tales", "Monsters -- Fiction"],
+    first_publish_date: "1831", // a later revision; the earliest edition (1818) should win
   }),
   // Kept only because it has reader activity (its one edition has no ISBN or cover).
   work("OL6W", { title: "Dune Messiah", authors: by("OL1A") }),
@@ -81,6 +82,7 @@ export const EDITIONS = [
     languages: [{ key: "/languages/eng" }],
     number_of_pages: 273,
   }),
+  edition("OL5N", "OL5W", { title: "Frankenstein", covers: [501], publish_date: "1818" }),
   edition("OL6M", "OL6W", { title: "Dune Messiah", isbn_13: ["123"] }), // invalid ISBN, no cover
   edition("OL8M", "OL8W", { title: "Dune", covers: [800] }),
   edition("OL9M", null, { title: "Orphan", isbn_13: ["9780441013593"] }), // no work

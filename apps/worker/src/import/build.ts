@@ -107,20 +107,24 @@ const POPULARITY = [
    where s.work_id = w.id and w.popularity_score is distinct from s.score`,
 ];
 
-/** Edition-derived fields. Existing values win, except the edition count. */
+/**
+ * Edition-derived fields. Existing values win, except the edition count and the first
+ * published year: Open Library's work-level year is often a later reprint (e.g. Pride and
+ * Prejudice as 1853), so the earliest edition year wins when it is earlier.
+ */
 const AGGREGATES = [
   `update works w set
      edition_count = s.edition_count,
      page_count = coalesce(w.page_count, s.page_count),
      language = coalesce(w.language, s.language),
-     first_published_year = coalesce(w.first_published_year, s.first_year)
+     first_published_year = least(w.first_published_year, s.first_year)
    from (
      select work_id,
             count(*)::int as edition_count,
             round(percentile_cont(0.5) within group (order by page_count)
                   filter (where page_count between 10 and 5000))::int as page_count,
             mode() within group (order by language) filter (where language is not null) as language,
-            min(publish_year) filter (where publish_year >= 1000) as first_year
+            min(publish_year) filter (where publish_year >= 1450) as first_year -- printing press
      from editions
      group by work_id
    ) s
