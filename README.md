@@ -21,7 +21,7 @@ Requires Node 22+, pnpm 10+, and Docker (for Postgres + Meilisearch).
 ```sh
 pnpm install
 cp .env.example .env          # then fill in BETTER_AUTH_SECRET etc.
-docker compose up -d          # Postgres on :5432, Meilisearch on :7700
+docker compose up -d          # Postgres on :5433, Meilisearch on :7700
 pnpm db:migrate
 pnpm db:seed                  # genre list
 ```
@@ -29,6 +29,15 @@ pnpm db:seed                  # genre list
 ## Importing the book catalog
 
 The catalog is built from the [Open Library data dumps](https://openlibrary.org/developers/dumps) (CC0).
+
+**For development, import a sample.** It takes the most popular books, streams the dumps
+straight from Open Library (nothing large is saved), and needs only ~1–2 GB of disk:
+
+```sh
+pnpm cli import sample --top 50000   # ~1 hour, mostly streaming the editions dump
+```
+
+The full catalog (~5 million books) needs about 60 GB free and is meant for the server:
 
 ```sh
 pnpm cli import download      # ~15 GB of .gz files into .data/ (resumable per file)

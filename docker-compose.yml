@@ -6,7 +6,8 @@ services:
       POSTGRES_PASSWORD: booktrakd
       POSTGRES_DB: booktrakd
     ports:
-      - "5432:5432"
+      # 5433 on the host: 5432 is often taken by a locally installed Postgres.
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     # The catalog import is write-heavy; give Postgres room to work.
@@ -18,7 +19,7 @@ services:
       -c max_wal_size=8GB
 
   meilisearch:
-    image: getmeili/meilisearch:v1.15
+    image: getmeili/meilisearch:v1.55
     environment:
       MEILI_MASTER_KEY: dev-master-key-change-me
       MEILI_NO_ANALYTICS: "true"

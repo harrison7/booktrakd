@@ -16,7 +16,8 @@ export function createDb(
   url: string,
   options: postgres.Options<Record<string, postgres.PostgresType>> = {},
 ) {
-  const client = postgres(url, { max: 10, ...options });
+  // Notices ("table does not exist, skipping") are expected; don't print them.
+  const client = postgres(url, { max: 10, onnotice: () => {}, ...options });
   const db = drizzle(client, { schema });
   return { db, client };
 }

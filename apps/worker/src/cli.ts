@@ -4,6 +4,7 @@
 //   pnpm cli import build
 //   pnpm cli import index
 //   pnpm cli import all                 download → load → build → index
+//   pnpm cli import sample [--top 50000] dev catalog: most popular works only, streamed
 //   pnpm cli covers prefetch [--top 50000]
 //   pnpm cli covers process <coverId>   process one cover now (debugging)
 //   pnpm cli worker                     run background jobs
@@ -17,6 +18,7 @@ import { env } from "./env";
 import { buildCatalog } from "./import/build";
 import { downloadDump, dumpPath } from "./import/download";
 import { loadDump } from "./import/load";
+import { loadSample } from "./import/sample";
 import { STAGING_TABLE_NAMES, type StagingTable } from "./import/staging";
 import { log, timed } from "./log";
 import { indexWorks, WORKS_INDEX } from "./search/index-works";
@@ -87,8 +89,12 @@ async function importCommand(step: string | undefined) {
       await load();
       await build();
       return index();
+    case "sample":
+      await withDb(({ db, client }) => loadSample(client, db, Number(flags.top)));
+      await build();
+      return index();
     default:
-      throw new Error("Usage: pnpm cli import <download|load|build|index|all>");
+      throw new Error("Usage: pnpm cli import <download|load|build|index|all|sample>");
   }
 }
 
