@@ -141,19 +141,28 @@ const FICTION_GENRES = new Set<GenreSlug>([
   "literary-fiction",
 ]);
 
+/** Non-fiction genres that still make sense on a novel ("Classics", Christian fiction…). */
+// (Not "drama": on a novel it usually means a stage adaptation exists.)
+const FICTION_COMPATIBLE = new Set<GenreSlug>(["classics", "humor", "poetry", "religion"]);
+
 const MAX_GENRES = 3;
 
 /**
- * Returns up to 3 genres, ranked by how many subjects point at each. Works whose subjects say
- * "fiction" but match no fiction genre fall back to Literary Fiction.
+ * Returns up to 3 genres, ranked by how many subjects point at each.
+ * - Works whose subjects say "fiction" but match no fiction genre fall back to Literary Fiction.
+ * - Once a specific fiction genre matches, Literary Fiction and non-fiction genres are dropped:
+ *   library subjects describe a novel's topics ("Desert ecology" on Dune), not its genre.
  */
 export function mapSubjectsToGenres(subjects: readonly string[]): GenreSlug[] {
   const hits = new Map<GenreSlug, number>();
   let saysFiction = false;
+  let saysNonfiction = false;
 
   for (const raw of subjects) {
     const subject = raw.toLowerCase();
-    if (/^(?:fiction|novels?)$|\bfiction\b/.test(subject) && !/juvenile/.test(subject)) {
+    if (/\bnon-?fiction\b/.test(subject)) {
+      saysNonfiction = true; // "Non-Fiction" would otherwise match the fiction check below
+    } else if (/^(?:fiction|novels?)$|\bfiction\b/.test(subject) && !/juvenile/.test(subject)) {
       saysFiction = true;
     }
     for (const rule of RULES) {
@@ -163,12 +172,34 @@ export function mapSubjectsToGenres(subjects: readonly string[]): GenreSlug[] {
     }
   }
 
-  if (saysFiction && ![...hits.keys()].some((g) => FICTION_GENRES.has(g))) {
+  const specificFiction = [...hits.keys()].some(
+    (g) => FICTION_GENRES.has(g) && g !== "literary-fiction",
+  );
+  if (specificFiction) {
+    for (const genre of hits.keys()) {
+      if (
+        genre === "literary-fiction" ||
+        !(FICTION_GENRES.has(genre) || FICTION_COMPATIBLE.has(genre))
+      ) {
+        hits.delete(genre);
+      }
+    }
+  } else if ((saysFiction && !saysNonfiction) || hits.has("literary-fiction")) {
+    // Topic genres (history, nature…) on an unspecified novel are dropped the same way.
+    for (const genre of hits.keys()) {
+      if (!FICTION_COMPATIBLE.has(genre)) hits.delete(genre);
+    }
     hits.set("literary-fiction", 1);
   }
 
-  return [...hits.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, MAX_GENRES)
-    .map(([genre]) => genre);
+  return (
+    [...hits.entries()]
+      // Most-supported first; on ties, fiction genres before topical ones.
+      .sort(
+        (a, b) =>
+          b[1] - a[1] || Number(FICTION_GENRES.has(b[0])) - Number(FICTION_GENRES.has(a[0])),
+      )
+      .slice(0, MAX_GENRES)
+      .map(([genre]) => genre)
+  );
 }

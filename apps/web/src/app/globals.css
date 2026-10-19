@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Design tokens (mirrors packages/ui-tokens). Dark by default — covers pop on slate. */
+@theme {
+  --color-bg: #121417;
+  --color-surface: #1c2026;
+  --color-surface-2: #242a31;
+  --color-border: #2c323a;
+  --color-text: #e6e8eb;
+  --color-muted: #8b949e;
+  --color-read: #2bb3a3;
+  --color-like: #f2715a;
+  --color-list: #6c8cff;
+  --color-star: #f2b84b;
+
+  --font-serif: var(--font-source-serif), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Native <dialog> backdrop for the log/review modal. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.7);
+}

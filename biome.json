@@ -1,7 +1,18 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/migrations", "!**/.data", "!**/.turbo"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/migrations",
+      "!**/.data",
+      "!**/.turbo",
+      "!**/.next",
+      "!**/next-env.d.ts"
+    ]
+  },
+  "css": {
+    "parser": { "tailwindDirectives": true }
   },
   "formatter": {
     "indentStyle": "space",

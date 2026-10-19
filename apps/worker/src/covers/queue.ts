@@ -1,12 +1,8 @@
-import { type Database, rowsOf, sql } from "@booktrakd/db";
+import { COVER_QUEUE, type CoverJob, type Database, rowsOf, sql } from "@booktrakd/db";
 import { PgBoss } from "pg-boss";
 import { log } from "../log";
 
-export const COVER_QUEUE = "cover.cache";
-
-export interface CoverJob {
-  coverId: number;
-}
+export { COVER_QUEUE, type CoverJob };
 
 export async function startBoss(databaseUrl: string) {
   const boss = new PgBoss(databaseUrl);

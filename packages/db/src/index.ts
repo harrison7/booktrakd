@@ -4,8 +4,9 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 // Re-exported so every package uses this single copy of drizzle-orm.
-export { and, desc, eq, inArray, or, sql } from "drizzle-orm";
+export { and, desc, eq, inArray, or, type SQL, sql } from "drizzle-orm";
 export { GENRES, type GenreSlug } from "./genres";
+export { COVER_QUEUE, type CoverJob } from "./jobs";
 export { seedGenres } from "./seed-genres";
 export { schema };
 

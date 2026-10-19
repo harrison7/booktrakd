@@ -1,0 +1,39 @@
+{
+  "name": "@booktrakd/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "next typegen && tsc"
+  },
+  "dependencies": {
+    "@booktrakd/api": "workspace:*",
+    "@booktrakd/auth": "workspace:*",
+    "@booktrakd/db": "workspace:*",
+    "@booktrakd/ui-tokens": "workspace:*",
+    "@booktrakd/validators": "workspace:*",
+    "@tanstack/react-query": "^5.104.5",
+    "@trpc/client": "^11.19.0",
+    "@trpc/server": "^11.19.0",
+    "@trpc/tanstack-react-query": "^11.19.0",
+    "better-auth": "^1.7.7",
+    "dotenv": "^18.0.5",
+    "lucide-react": "^1.59.0",
+    "meilisearch": "^0.62.0",
+    "next": "^16.4.2",
+    "pg-boss": "^12.36.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "superjson": "^2.2.6",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3"
+  }
+}

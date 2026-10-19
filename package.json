@@ -13,6 +13,7 @@
     "db:generate": "pnpm --filter @booktrakd/db generate",
     "db:migrate": "pnpm --filter @booktrakd/db migrate",
     "db:seed": "pnpm --filter @booktrakd/db seed",
+    "dev": "pnpm --filter @booktrakd/web dev",
     "cli": "pnpm --filter @booktrakd/worker cli"
   },
   "devDependencies": {

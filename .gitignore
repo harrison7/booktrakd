@@ -7,3 +7,8 @@ dist/
 
 # Open Library dumps and locally cached covers
 .data/
+
+# Next.js build output
+.next/
+next-env.d.ts
+*.tsbuildinfo

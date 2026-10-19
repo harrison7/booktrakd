@@ -118,6 +118,29 @@ describe("mapSubjectsToGenres", () => {
     expect(mapSubjectsToGenres(["Political science"])).not.toContain("science");
   });
 
+  it("ignores topic subjects and generic 'fiction' once a fiction genre is known", () => {
+    // Dune's real subjects produced "Literary Fiction" and "Nature & Environment".
+    expect(
+      mapSubjectsToGenres(["Science fiction", "Desert ecology", "Fiction, general", "Ecology"]),
+    ).toEqual(["science-fiction"]);
+    expect(mapSubjectsToGenres(["Fiction, general", "Natural history"])).toEqual([
+      "literary-fiction",
+    ]);
+    expect(mapSubjectsToGenres(["Christian fiction", "Romance fiction"])).toEqual([
+      "romance",
+      "religion",
+    ]);
+    // Real subjects of Sapiens and Pride and Prejudice.
+    expect(mapSubjectsToGenres(["World history", "Non-Fiction", "SCIENCE / General"])).toEqual([
+      "history",
+      "science",
+    ]);
+    expect(mapSubjectsToGenres(["Love stories", "Drama", "Fiction Classics"])).toEqual([
+      "romance",
+      "classics",
+    ]);
+  });
+
   it("falls back to Literary Fiction for unspecified fiction", () => {
     expect(mapSubjectsToGenres(["Fiction", "Families -- Fiction"])).toEqual(["literary-fiction"]);
   });

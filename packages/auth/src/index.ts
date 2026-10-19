@@ -3,6 +3,7 @@
 import { expo } from "@better-auth/expo";
 import type { Database } from "@booktrakd/db";
 import { accounts, sessions, users, verifications } from "@booktrakd/db/schema";
+import { username as usernameSchema } from "@booktrakd/validators";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { username } from "better-auth/plugins";
@@ -38,7 +39,16 @@ export function createAuth({ db, secret, baseURL, google, apple }: AuthOptions) 
         isPatron: { type: "boolean", required: false, defaultValue: false, input: false },
       },
     },
-    plugins: [username(), expo()],
+    plugins: [
+      username({
+        minUsernameLength: 2,
+        maxUsernameLength: 30,
+        // Same rules as the sign-up form, including reserved names like "search" or "book"
+        // that would collide with site routes (profiles live at /<username>).
+        usernameValidator: (name) => usernameSchema.safeParse(name).success,
+      }),
+      expo(),
+    ],
     trustedOrigins: ["booktrakd://"],
   });
 }

@@ -17,6 +17,7 @@ export interface WorkDocument {
   language: string | null;
   popularity: number;
   edition_count: number;
+  cover_id: number | null;
   cover_key: string | null;
   cover_color: string | null;
 }
@@ -53,7 +54,9 @@ export async function fetchWorkDocuments(
     await db.execute(sql`
       select w.id, w.slug, w.title, w.subtitle, w.first_published_year as year, w.language,
              w.popularity_score as popularity, w.edition_count, s.name as series,
-             cv.storage_key as cover_key, cv.dominant_color as cover_color,
+             cv.id as cover_id,
+             case when cv.status = 'ready' then cv.storage_key end as cover_key,
+             cv.dominant_color as cover_color,
              coalesce((
                select array_agg(a.name order by c.position)
                from work_contributors c join authors a on a.id = c.author_id
@@ -66,7 +69,7 @@ export async function fetchWorkDocuments(
              ), '{}') as isbns
       from works w
       left join series s on s.id = w.series_id
-      left join covers cv on cv.id = w.primary_cover_id and cv.status = 'ready'
+      left join covers cv on cv.id = w.primary_cover_id
       where w.merged_into_id is null and w.slug is not null and w.id > ${afterId}
       order by w.id
       limit ${limit}
@@ -86,6 +89,7 @@ export async function fetchWorkDocuments(
     language: (r.language as string | null) ?? null,
     popularity: Number(r.popularity),
     edition_count: Number(r.edition_count),
+    cover_id: r.cover_id == null ? null : Number(r.cover_id),
     cover_key: (r.cover_key as string | null) ?? null,
     cover_color: (r.cover_color as string | null) ?? null,
   }));
