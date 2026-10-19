@@ -6,6 +6,7 @@
 //   pnpm cli import all                 download → load → build → index
 //   pnpm cli import sample [--top 50000] dev catalog: most popular works only, streamed
 //   pnpm cli import genres              re-derive genres after changing the mapping rules
+//   pnpm cli import author-names [--recheck]  fix authors stored under a non-Latin name (OL API)
 //   pnpm cli covers prefetch [--top 50000]
 //   pnpm cli covers process <coverId>   process one cover now (debugging)
 //   pnpm cli worker                     run background jobs
@@ -16,6 +17,7 @@ import { processCover } from "./covers/process";
 import { COVER_QUEUE, type CoverJob, prefetchCovers, startBoss } from "./covers/queue";
 import { createStorage } from "./covers/storage";
 import { env } from "./env";
+import { fixAuthorNames } from "./import/author-names";
 import { buildCatalog } from "./import/build";
 import { downloadDump, dumpPath } from "./import/download";
 import { regenerateGenres } from "./import/genres";
@@ -31,6 +33,7 @@ const { values: flags, positionals } = parseArgs({
   options: {
     only: { type: "string" },
     force: { type: "boolean", default: false },
+    recheck: { type: "boolean", default: false },
     top: { type: "string", default: "50000" },
   },
 });
@@ -91,6 +94,9 @@ async function importCommand(step: string | undefined) {
       await load();
       await build();
       return index();
+    case "author-names":
+      await withDb(({ db }) => fixAuthorNames(db, { recheck: flags.recheck }));
+      return index();
     case "genres":
       await withDb(({ db }) => regenerateGenres(db));
       return index();
@@ -99,7 +105,9 @@ async function importCommand(step: string | undefined) {
       await build();
       return index();
     default:
-      throw new Error("Usage: pnpm cli import <download|load|build|index|all|sample|genres>");
+      throw new Error(
+        "Usage: pnpm cli import <download|load|build|index|all|sample|genres|author-names>",
+      );
   }
 }
 

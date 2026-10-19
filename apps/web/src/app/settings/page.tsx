@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { serverApi } from "@/server/api";
 import { FavoritesForm, GoalForm, ProfileForm } from "./forms";
@@ -13,7 +14,12 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-12 px-4 py-10">
-      <h1 className="font-serif text-3xl">Settings</h1>
+      <div className="flex items-baseline justify-between">
+        <h1 className="font-serif text-3xl">Settings</h1>
+        <Link href="/settings/import" className="text-sm text-muted hover:text-read">
+          Import from Goodreads / StoryGraph · Export →
+        </Link>
+      </div>
       <Section title="Profile">
         <ProfileForm
           initial={{

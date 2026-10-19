@@ -1,14 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { mapSubjectsToGenres } from "../src/catalog/genres";
 import {
   cleanTitle,
+  displayAuthorName,
   matchTitle,
   normalizeFormat,
   parseYear,
   slugify,
   toIsbn10,
   toIsbn13,
-} from "../src/catalog/normalize";
+} from "@booktrakd/catalog";
+import { describe, expect, it } from "vitest";
+import { mapSubjectsToGenres } from "../src/catalog/genres";
 
 describe("cleanTitle", () => {
   it.each([
@@ -158,5 +159,47 @@ describe("mapSubjectsToGenres", () => {
     ]);
     expect(genres).toHaveLength(3);
     expect(genres[0]).toBe("fantasy");
+  });
+});
+
+describe("displayAuthorName", () => {
+  it("keeps Latin names", () => {
+    expect(displayAuthorName("Fiódor Dostoievski", ["Фёдор Достоевский"])).toBe(
+      "Fiódor Dostoievski",
+    );
+  });
+
+  it("picks the most common reader-friendly Latin alternate", () => {
+    // Real Open Library alternates for Tolstoy.
+    const alternates = [
+      "Толстой, Лев, граф",
+      "граф Лев Толстой",
+      "Count Lev Nikolayevich Tolstoy",
+      "Leo N. Tolstoj",
+      "L. N. Tolstoy",
+      "TOLSTOY, LEO, GRAF, 1828-1910.",
+      "Tolstoy, Leo graf",
+      "Leo  Tolstoy",
+      "LEO TOLSTOY",
+      "Leo TOLSTOY",
+    ];
+    expect(displayAuthorName("Лев Толстой", alternates)).toBe("Leo Tolstoy");
+    // Real alternates (Murakami's "Haruki/Murakami" orders tie exactly; Chekhov has 50 spellings).
+    const murakami =
+      "春樹 村上;HARUKI MURAKAMI;Haruki MURAKAMI;MURAKAMI HARUKI;Murakami Haruki;MURAKAMI Haruki;Haruki Murakami;Харуки Мураками;村上春树;Kharuki Murakami;MURAKAMI;Murakami Kharuki;Murakami Haruki Kenkyūkai";
+    expect(displayAuthorName("村上春樹", murakami.split(";"))).toBe("Haruki Murakami");
+    const chekhov =
+      "A. Checkhov;A. Chekhov;A. P. Chekhov;A. P. Chekov;A. Pavlovich Chekhov;Aleksandr Pavlovich Chekhov;Anthon Chekhov;Anton Anton Chekhov;Anton Cechov;Anton Cehov;Anton Checkov;Anton Chejov;Anton Chekhoff;Anton Chekhov;Anton Chekov;Anton Chéjov;Anton P. Chekhov;Anton P. Çehov;Anton Pavlovich Chekhov;Anton Pavlovich Chekov;Anton Pavlovich Tchekhov;Anton Pavlovitch Chekhov;Anton Pavlovitch Tchekhov;Anton Tchehov;Anton Tchekhov;Anton Tchekoff;Anton Tchekov;Anton Tschechow;Anton Čechov;Antón Chéjov;Author Chekhov;Auton Chekhov;Антон Чехов";
+    expect(displayAuthorName("Антон Павлович Чехов", chekhov.split(";"))).toBe("Anton Chekhov");
+  });
+
+  it("handles single-name authors", () => {
+    expect(displayAuthorName("Ὅμηρος", ["Homer", "Homère", "HOMER", "Homer", "Omero"])).toBe(
+      "Homer",
+    );
+  });
+
+  it("keeps the original when there's no usable Latin alternate", () => {
+    expect(displayAuthorName("日向夏", ["Hyuuga, Natsu"])).toBe("日向夏");
   });
 });

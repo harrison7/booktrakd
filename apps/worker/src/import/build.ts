@@ -4,6 +4,7 @@
 import { type Database, rowsOf, sql } from "@booktrakd/db";
 import { log, timed } from "../log";
 import { dedupeWorks } from "./dedupe";
+import { localizeTitles } from "./localize";
 import { ensureStagingTables } from "./staging";
 
 async function run(db: Database, statements: string[]) {
@@ -200,11 +201,26 @@ const SLUGS = [
   ),
 ];
 
+export class EmptyStagingError extends Error {
+  constructor() {
+    super(
+      "The staging tables are empty, so there's nothing to build from. Run `pnpm cli import load` " +
+        "(or `import sample`) first. Staging tables are UNLOGGED for speed, so Postgres clears " +
+        "them after an unclean shutdown (e.g. Docker Desktop being stopped or the PC sleeping).",
+    );
+  }
+}
+
 export async function buildCatalog(db: Database) {
   await ensureStagingTables(db);
+  const [staged] = rowsOf<{ works: unknown }>(
+    await db.execute(sql`select exists (select 1 from staging.works) as works`),
+  );
+  if (!staged?.works) throw new EmptyStagingError();
   await timed("Preparing staging data", () => run(db, PREPARE));
   await timed("Inserting authors, works and editions", () => run(db, INSERT));
   await timed("Computing popularity", () => run(db, POPULARITY));
+  await timed("Using English titles for works titled in another script", () => localizeTitles(db));
   const dedupe = await timed("Merging duplicate works", () => dedupeWorks(db));
   log(
     `Merged ${dedupe.merged} duplicate works; ${dedupe.reported} ambiguous groups sent to librarians`,

@@ -3,7 +3,7 @@ import { type Database, rowsOf, sql } from "@booktrakd/db";
 import { createTestDb } from "@booktrakd/db/testing";
 import { beforeAll, describe, expect, it } from "vitest";
 import { parseDumpLine } from "../src/catalog/openlibrary";
-import { buildCatalog } from "../src/import/build";
+import { buildCatalog, EmptyStagingError } from "../src/import/build";
 import {
   insertStagingRows,
   resetStagingTable,
@@ -46,17 +46,30 @@ beforeAll(async () => {
 }, 60_000);
 
 describe("buildCatalog", () => {
+  it("refuses to build from empty staging tables", async () => {
+    const { db: empty } = await createTestDb();
+    await expect(buildCatalog(empty)).rejects.toBeInstanceOf(EmptyStagingError);
+  }, 60_000);
+
   it("keeps works with useful editions or reader activity, drops the rest", async () => {
     const live = await query<{ ol_work_id: string }>(
       db,
       sql`select ol_work_id from works where merged_into_id is null order by ol_work_id`,
     );
-    expect(live.map((r) => r.ol_work_id)).toEqual(["OL1W", "OL3W", "OL4W", "OL5W", "OL6W", "OL8W"]);
+    expect(live.map((r) => r.ol_work_id)).toEqual([
+      "OL10W",
+      "OL1W",
+      "OL3W",
+      "OL4W",
+      "OL5W",
+      "OL6W",
+      "OL8W",
+    ]);
     expect(await workByOlId(db, "OL7W")).toBeUndefined();
   });
 
   it("merges duplicate works into the most popular one", async () => {
-    expect(firstRun.merged).toBe(1);
+    expect(firstRun.merged).toBe(2); // Dune's deluxe edition + Crime and Punishment
     const dune = await workByOlId(db, "OL1W");
     const deluxe = await workByOlId(db, "OL2W");
     expect(deluxe?.merged_into_id).toBe(dune?.id);
@@ -74,6 +87,18 @@ describe("buildCatalog", () => {
 
   it("uses the earliest edition year when Open Library's work year is later", async () => {
     expect((await workByOlId(db, "OL5W"))?.first_published_year).toBe(1818);
+  });
+
+  it("uses the English edition title for works titled in another script", async () => {
+    const work = await workByOlId(db, "OL10W");
+    expect(work).toMatchObject({
+      title: "Crime and Punishment",
+      original_title: "Преступление и наказание",
+      match_title: "crime and punishment",
+      slug: "crime-and-punishment",
+      edition_count: 4,
+    });
+    expect((await workByOlId(db, "OL11W"))?.merged_into_id).toBe(work?.id);
   });
 
   it("reports ambiguous duplicates (generic titles) instead of merging them", async () => {
@@ -146,7 +171,7 @@ describe("buildCatalog", () => {
       edition_count: 2,
     });
     expect(dune?.isbns.sort()).toEqual(["9780441013593", "9780441172719"]);
-    expect(docs).toHaveLength(6);
+    expect(docs).toHaveLength(7);
   });
 
   it("is safe to re-run", async () => {

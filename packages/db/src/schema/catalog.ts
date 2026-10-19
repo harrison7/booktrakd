@@ -58,6 +58,9 @@ export const works = pgTable(
     slug: text("slug").unique(),
     title: text("title").notNull(),
     subtitle: text("subtitle"),
+    // Title in its original language/script when `title` is an English edition title
+    // (e.g. "Преступление и наказание" for Crime and Punishment).
+    originalTitle: text("original_title"),
     // Normalized title used for duplicate detection (see worker/src/catalog/normalize.ts).
     matchTitle: text("match_title").notNull(),
     description: text("description"),

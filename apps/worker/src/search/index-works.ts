@@ -9,6 +9,7 @@ export interface WorkDocument {
   slug: string;
   title: string;
   subtitle: string | null;
+  original_title: string | null;
   authors: string[];
   series: string | null;
   isbns: string[];
@@ -26,7 +27,7 @@ export async function configureWorksIndex(meili: Meilisearch) {
   await meili
     .index(WORKS_INDEX)
     .updateSettings({
-      searchableAttributes: ["title", "subtitle", "authors", "series", "isbns"],
+      searchableAttributes: ["title", "original_title", "subtitle", "authors", "series", "isbns"],
       filterableAttributes: ["genres", "year", "language"],
       sortableAttributes: ["popularity", "year"],
       // Text relevance first, then popularity breaks ties ("dune" → Herbert's Dune first).
@@ -52,7 +53,7 @@ export async function fetchWorkDocuments(
 ): Promise<WorkDocument[]> {
   const rows = rowsOf<Record<string, unknown>>(
     await db.execute(sql`
-      select w.id, w.slug, w.title, w.subtitle, w.first_published_year as year, w.language,
+      select w.id, w.slug, w.title, w.subtitle, w.original_title, w.first_published_year as year, w.language,
              w.popularity_score as popularity, w.edition_count, s.name as series,
              cv.id as cover_id,
              case when cv.status = 'ready' then cv.storage_key end as cover_key,
@@ -81,6 +82,7 @@ export async function fetchWorkDocuments(
     slug: r.slug as string,
     title: r.title as string,
     subtitle: (r.subtitle as string | null) ?? null,
+    original_title: (r.original_title as string | null) ?? null,
     authors: r.authors as string[],
     series: (r.series as string | null) ?? null,
     isbns: r.isbns as string[],

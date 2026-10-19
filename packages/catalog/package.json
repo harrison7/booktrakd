@@ -1,0 +1,11 @@
+{
+  "name": "@booktrakd/catalog",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/normalize.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc"
+  }
+}

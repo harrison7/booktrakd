@@ -1,3 +1,4 @@
+// Shared by the catalog importer (worker) and the Goodreads/StoryGraph import (api).
 // Text normalization for catalog data: display-title cleanup, duplicate-matching keys,
 // URL slugs, and parsing of messy source fields (years, ISBNs, formats).
 
@@ -143,4 +144,70 @@ export function toIsbn10(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const isbn = raw.toUpperCase().replace(/[^0-9X]/g, "");
   return isValidIsbn10(isbn) ? isbn : null;
+}
+
+const hasLatin = (text: string) => /\p{Script=Latin}/u.test(text);
+
+/**
+ * Display name for an author. Open Library sometimes uses the original script as the main
+ * name ("Лев Толстой", "村上春樹"); readers here expect the Latin form, which is usually among
+ * the alternate names. Picks a full, properly cased name ending in the surname — the most
+ * common last word across all variants — whose words are the most common spellings:
+ * "Anton Chekhov" from 50 transliterations, "Haruki Murakami" not "Murakami Haruki".
+ */
+export function displayAuthorName(name: string, alternates: readonly string[] = []): string {
+  if (hasLatin(name)) return name;
+  const variants = alternates
+    .map((a) => a.replace(/\s+/g, " ").trim())
+    .filter((a) => hasLatin(a) && !/[,\d()]/.test(a));
+  if (variants.length === 0) return name;
+
+  const key = (word: string) => stripLatinDiacritics(word.toLowerCase());
+  const wordCounts = new Map<string, number>();
+  const lastCounts = new Map<string, number>();
+  for (const v of variants) {
+    const words = v.split(" ").map(key);
+    for (const w of new Set(words)) wordCounts.set(w, (wordCounts.get(w) ?? 0) + 1);
+    const last = words[words.length - 1] ?? "";
+    lastCounts.set(last, (lastCounts.get(last) ?? 0) + 1);
+  }
+  const surname = [...lastCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  const isInitial = (w: string) => /^\p{L}\.?$/u.test(w);
+  const isProperCase = (v: string) =>
+    v.split(" ").every((w) => /^\p{Lu}/u.test(w) && (w.length <= 2 || w !== w.toUpperCase()));
+  const candidates = variants.filter((v) => {
+    const words = v.split(" ");
+    return (
+      words.length >= 2 &&
+      key(words[words.length - 1] ?? "") === surname &&
+      new Set(words.map(key)).size === words.length // typos like "Anton Anton Chekhov"
+    );
+  });
+  if (candidates.length === 0) {
+    // Single-name authors (Homer, Plato, Voltaire): the most common properly cased one-word name.
+    const single = variants
+      .filter((v) => !v.includes(" ") && isProperCase(v))
+      .sort((a, b) => (wordCounts.get(key(b)) ?? 0) - (wordCounts.get(key(a)) ?? 0))[0];
+    return single ?? name;
+  }
+  const score = (v: string) => {
+    const words = v.split(" ").map(key);
+    return words.reduce((sum, w) => sum + (wordCounts.get(w) ?? 0), 0) / words.length;
+  };
+  const rank = (v: string) => [
+    Number(isProperCase(v)),
+    Number(!v.split(" ").some(isInitial)),
+    score(v),
+    -v.length,
+  ];
+  const best = candidates.sort((a, b) => {
+    const [ra, rb] = [rank(a), rank(b)];
+    for (let i = 0; i < ra.length; i++) {
+      const diff = (rb[i] ?? 0) - (ra[i] ?? 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  })[0];
+  return best ?? name;
 }

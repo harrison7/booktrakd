@@ -1,17 +1,19 @@
 // Parsing of Open Library bulk dumps (https://openlibrary.org/developers/dumps).
 // Main dumps are TSV: type, key, revision, last_modified, JSON.
 // Ratings: work_key, edition_key, rating, date. Reading log: work_key, edition_key, shelf, date.
-import type { StagingRow, StagingTable } from "../import/staging";
-import { mapSubjectsToGenres } from "./genres";
+
 import {
   cleanTitle,
+  displayAuthorName,
   matchTitle,
   normalizeFormat,
   parseYear,
   slugify,
   toIsbn10,
   toIsbn13,
-} from "./normalize";
+} from "@booktrakd/catalog";
+import type { StagingRow, StagingTable } from "../import/staging";
+import { mapSubjectsToGenres } from "./genres";
 
 export const DUMP_FILES: Record<StagingTable, string> = {
   authors: "ol_dump_authors_latest.txt.gz",
@@ -56,8 +58,9 @@ const keyOf = (v: unknown): string | null =>
   v && typeof v === "object" ? str((v as Json).key) : null;
 
 function parseAuthor(key: string, json: Json): StagingRow | null {
-  const name = str(json.name) ?? str(json.personal_name);
-  if (!name) return null;
+  const primary = str(json.name) ?? str(json.personal_name);
+  if (!primary) return null;
+  const name = displayAuthorName(primary, strings(json.alternate_names));
   return [
     olId(key),
     name,

@@ -53,6 +53,10 @@ export const WORKS = [
   work("OL7W", { title: "Ghost Work", authors: by("OL1A") }),
   // Same title as OL1W but a different author → separate book, gets "dune-2".
   work("OL8W", { title: "Dune", authors: by("OL3A") }),
+  // Titled in Russian, but its editions are English → shown as "Crime and Punishment".
+  work("OL10W", { title: "Преступление и наказание", authors: by("OL3A") }),
+  // An English-titled duplicate of OL10W: merges into it once OL10W gets its English title.
+  work("OL11W", { title: "Crime and Punishment", authors: by("OL3A") }),
   work("OL9W", { authors: by("OL1A") }), // no title → skipped
 ];
 
@@ -85,6 +89,15 @@ export const EDITIONS = [
   edition("OL5N", "OL5W", { title: "Frankenstein", covers: [501], publish_date: "1818" }),
   edition("OL6M", "OL6W", { title: "Dune Messiah", isbn_13: ["123"] }), // invalid ISBN, no cover
   edition("OL8M", "OL8W", { title: "Dune", covers: [800] }),
+  ...["OL10M", "OL10N"].map((id) =>
+    edition(id, "OL10W", {
+      title: "Crime and Punishment",
+      isbn_13: ["9780143058144"],
+      languages: [{ key: "/languages/eng" }],
+    }),
+  ),
+  edition("OL10R", "OL10W", { title: "Преступление и наказание", isbn_13: ["9785170906307"] }),
+  edition("OL11M", "OL11W", { title: "Crime and Punishment", isbn_13: ["9780486415871"] }),
   edition("OL9M", null, { title: "Orphan", isbn_13: ["9780441013593"] }), // no work
 ];
 

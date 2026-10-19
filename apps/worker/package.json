@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
+    "@booktrakd/catalog": "workspace:*",
     "@booktrakd/db": "workspace:*",
     "@booktrakd/ui-tokens": "workspace:*",
     "dotenv": "^18.0.5",

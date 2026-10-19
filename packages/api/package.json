@@ -12,17 +12,20 @@
   },
   "dependencies": {
     "@booktrakd/auth": "workspace:*",
+    "@booktrakd/catalog": "workspace:*",
     "@booktrakd/db": "workspace:*",
     "@booktrakd/ui-tokens": "workspace:*",
     "@booktrakd/validators": "workspace:*",
     "@trpc/server": "^11.19.0",
     "meilisearch": "^0.62.0",
+    "papaparse": "^5.7.0",
     "pg-boss": "^12.36.0",
     "superjson": "^2.2.6",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@types/papaparse": "^5.5.2",
     "vitest": "^5.0.3"
   }
 }

@@ -5,14 +5,17 @@ A Letterboxd-style site and app for books. See [PLAN.md](PLAN.md) for the full p
 ## Repo layout
 
 ```
+apps/web/            Next.js website (also hosts the tRPC API)
 apps/worker/         Catalog import CLI + background jobs (cover caching)
+packages/api/        tRPC routers — all business logic
+packages/catalog/    Title/author/ISBN normalization shared by importers
 packages/db/         Drizzle schema, migrations, seed
 packages/auth/       Better Auth config (shared by web + mobile)
 packages/validators/ Shared Zod schemas
 packages/ui-tokens/  Colors, fonts, cover sizes
 ```
 
-`apps/web` (Next.js) and `apps/mobile` (Expo) arrive in Phases 1 and 4.
+`apps/mobile` (Expo) arrives in Phase 4.
 
 ## Setup
 
@@ -48,6 +51,16 @@ pnpm cli import index         # push to Meilisearch
 pnpm cli import all
 ```
 
+Fix-up commands (no dump reload needed):
+
+```sh
+pnpm cli import genres          # re-derive genres after changing the mapping rules
+pnpm cli import author-names    # authors stored under a non-Latin name → Latin name (OL API)
+```
+
+The build refuses to run if the staging tables are empty. They're UNLOGGED for speed, so
+Postgres clears them after an unclean shutdown; re-run `import load` / `import sample`.
+
 Use `--only works,editions` with `download`/`load` to work on specific dumps. Running the
 build again with newer dumps only adds new records and refreshes derived fields, so librarian
 edits are never overwritten.
@@ -61,6 +74,16 @@ pnpm cli worker                        # process the queue (leave running)
 ```
 
 Please set `OL_USER_AGENT` in `.env` to your app name and contact email, as Open Library asks.
+
+## Running the website
+
+```sh
+pnpm dev                        # http://localhost:3000
+pnpm cli worker                 # optional: caches covers locally as they're viewed
+```
+
+Readers can import their Goodreads or StoryGraph history at **Settings → Import**, and export
+their library and diary as CSV from the same page.
 
 ## Checks
 
