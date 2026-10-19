@@ -1,7 +1,8 @@
 import { Heart } from "lucide-react";
 import Link from "next/link";
-import { BookCover, CoverGrid } from "@/components/cover";
+import { CoverGrid, GridBook } from "@/components/cover";
 import { Pager } from "@/components/pager";
+import { ShelvesProvider } from "@/components/quick-actions";
 import { Stars } from "@/components/rating";
 import { orNotFound, serverApi } from "@/server/api";
 
@@ -16,8 +17,25 @@ export default async function BooksPage(props: PageProps<"/[username]/books">) {
   const search = await props.searchParams;
   const sort = SORTS.find(([s]) => s === search.sort)?.[0] ?? "recent";
   const offset = Number(search.offset) || 0;
-  const { books, nextOffset } = await orNotFound(
-    (await serverApi()).users.books({ username, sort, offset }),
+  const api = await serverApi();
+  const [{ books, nextOffset }, me] = await Promise.all([
+    orNotFound(api.users.books({ username, sort, offset })),
+    api.users.me(),
+  ]);
+  const grid = (
+    <CoverGrid min={100}>
+      {books.map((b) => (
+        <div key={b.id}>
+          <GridBook book={b} actions={!!me} />
+          <div className="mt-1 flex h-4 items-center gap-1 text-xs">
+            <Stars rating={b.rating} />
+            {b.liked && (
+              <Heart className="size-3" fill="var(--color-like)" color="var(--color-like)" />
+            )}
+          </div>
+        </div>
+      ))}
+    </CoverGrid>
   );
 
   return (
@@ -34,19 +52,7 @@ export default async function BooksPage(props: PageProps<"/[username]/books">) {
         ))}
       </nav>
       {books.length === 0 && <p className="text-sm text-muted">No books yet.</p>}
-      <CoverGrid min={100}>
-        {books.map((b) => (
-          <div key={b.id}>
-            <BookCover book={b} size="md" fluid />
-            <div className="mt-1 flex h-4 items-center gap-1 text-xs">
-              <Stars rating={b.rating} />
-              {b.liked && (
-                <Heart className="size-3" fill="var(--color-like)" color="var(--color-like)" />
-              )}
-            </div>
-          </div>
-        ))}
-      </CoverGrid>
+      {me ? <ShelvesProvider workIds={books.map((b) => b.id)}>{grid}</ShelvesProvider> : grid}
       <Pager
         base={`/${username}/books?sort=${sort}&`}
         offset={offset}

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BookCover, Cover, CoverGrid } from "@/components/cover";
+import { Cover, CoverGrid, GridBook } from "@/components/cover";
+import { ShelvesProvider } from "@/components/quick-actions";
 import { serverApi } from "@/server/api";
 
 export default async function HomePage() {
@@ -50,25 +51,41 @@ export default async function HomePage() {
             </h1>
             {profile.currentlyReading.length > 0 && (
               <Section title="Currently reading">
-                <CoverGrid min={120}>
-                  {profile.currentlyReading.map((b) => (
-                    <BookCover key={b.id} book={b} size="md" fluid />
-                  ))}
-                </CoverGrid>
+                <ShelvesProvider workIds={profile.currentlyReading.map((b) => b.id)}>
+                  <CoverGrid min={120}>
+                    {profile.currentlyReading.map((b) => (
+                      <GridBook key={b.id} book={b} actions />
+                    ))}
+                  </CoverGrid>
+                </ShelvesProvider>
               </Section>
             )}
           </>
         )}
         <Section title="Popular books">
-          <CoverGrid min={120}>
-            {popular.map((b, i) => (
-              <BookCover key={b.id} book={b} size="md" fluid priority={i < 12} />
-            ))}
-          </CoverGrid>
+          <MaybeShelves signedIn={!!me} workIds={popular.map((b) => b.id)}>
+            <CoverGrid min={120}>
+              {popular.map((b, i) => (
+                <GridBook key={b.id} book={b} actions={!!me} priority={i < 12} />
+              ))}
+            </CoverGrid>
+          </MaybeShelves>
         </Section>
       </div>
     </div>
   );
+}
+
+function MaybeShelves({
+  signedIn,
+  workIds,
+  children,
+}: {
+  signedIn: boolean;
+  workIds: number[];
+  children: React.ReactNode;
+}) {
+  return signedIn ? <ShelvesProvider workIds={workIds}>{children}</ShelvesProvider> : children;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

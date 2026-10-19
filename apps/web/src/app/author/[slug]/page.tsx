@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BookCover, CoverGrid } from "@/components/cover";
+import { CoverGrid, GridBook } from "@/components/cover";
+import { ShelvesProvider } from "@/components/quick-actions";
 import { ReportIssue } from "@/components/report-issue";
 import { SpoilerText } from "@/components/spoiler-text";
 import { orNotFound, serverApi } from "@/server/api";
@@ -49,18 +50,21 @@ export default async function AuthorPage(props: PageProps<"/author/[slug]">) {
           </span>
         )}
       </div>
-      <CoverGrid>
-        {author.books.map((b) => (
-          <BookCover key={b.id} book={b} size="md" fluid>
-            {author.shelves[b.id]?.read && (
-              <span
-                className="absolute right-1 bottom-1 size-2.5 rounded-full bg-read ring-2 ring-bg"
-                title="You've read this"
-              />
-            )}
-          </BookCover>
-        ))}
-      </CoverGrid>
+      {me ? (
+        <ShelvesProvider workIds={author.books.map((b) => b.id)}>
+          <CoverGrid>
+            {author.books.map((b) => (
+              <GridBook key={b.id} book={b} actions />
+            ))}
+          </CoverGrid>
+        </ShelvesProvider>
+      ) : (
+        <CoverGrid>
+          {author.books.map((b) => (
+            <GridBook key={b.id} book={b} />
+          ))}
+        </CoverGrid>
+      )}
       <ReportIssue objectType="author" objectId={author.id} signedIn={me !== null} />
     </div>
   );

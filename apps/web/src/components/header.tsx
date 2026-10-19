@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { serverApi } from "@/server/api";
 import { SearchBox, UserMenu } from "./header-client";
+import { LogLauncher } from "./log-launcher";
 
 export async function Header() {
   const me = await (await serverApi()).users.me();
@@ -18,7 +19,10 @@ export async function Header() {
         <div className="ml-auto flex min-w-0 items-center gap-3">
           <SearchBox />
           {me?.username ? (
-            <UserMenu username={me.username} name={me.name} />
+            <>
+              <UserMenu username={me.username} name={me.name} />
+              <LogLauncher />
+            </>
           ) : (
             <>
               <Link

@@ -3,6 +3,7 @@ import { COVER_SIZES, type CoverSize, placeholderCover } from "@booktrakd/ui-tok
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { coverUrl, RETINA } from "@/lib/covers";
+import { QuickActions } from "./quick-actions";
 
 interface CoverProps {
   cover: CoverData | null;
@@ -84,19 +85,22 @@ export function BookCover({
   size,
   fluid,
   priority,
+  zoom = true,
   children,
 }: {
   book: BookCard;
   size: CoverSize;
   fluid?: boolean;
   priority?: boolean;
+  /** Grow slightly on hover (off when a parent handles it, e.g. GridBook). */
+  zoom?: boolean;
   children?: ReactNode;
 }) {
   return (
     <Link
       href={`/book/${book.slug}`}
       title={book.year ? `${book.title} (${book.year})` : book.title}
-      className="group relative block transition-transform hover:z-10 hover:scale-[1.03]"
+      className={`group relative block ${zoom ? "transition-transform hover:z-10 hover:scale-[1.03]" : ""}`}
     >
       <Cover
         cover={book.cover}
@@ -109,6 +113,30 @@ export function BookCover({
       />
       {children}
     </Link>
+  );
+}
+
+/**
+ * A cover in a grid. With `actions`, hovering shows read / like / reading-list toggles
+ * (needs a ShelvesProvider around the grid).
+ */
+export function GridBook({
+  book,
+  actions,
+  priority,
+  children,
+}: {
+  book: BookCard;
+  actions?: boolean;
+  priority?: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="group/card relative transition-transform hover:z-10 hover:scale-[1.03] focus-within:z-10">
+      <BookCover book={book} size="md" fluid priority={priority} zoom={false} />
+      {actions && <QuickActions workId={book.id} />}
+      {children}
+    </div>
   );
 }
 
