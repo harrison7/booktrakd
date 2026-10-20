@@ -78,5 +78,24 @@ function createServices(): ApiDeps {
 }
 
 const globalForServices = globalThis as unknown as { booktrakdServices?: ApiDeps };
-if (!globalForServices.booktrakdServices) globalForServices.booktrakdServices = createServices();
-export const services: ApiDeps = globalForServices.booktrakdServices;
+const get = () => {
+  globalForServices.booktrakdServices ??= createServices();
+  return globalForServices.booktrakdServices;
+};
+
+/**
+ * Created on first use rather than at import, so `next build` (which imports routes to
+ * collect page data) doesn't need DATABASE_URL and the auth secrets.
+ */
+export const services: ApiDeps = {
+  get db() {
+    return get().db;
+  },
+  get auth() {
+    return get().auth;
+  },
+  get search() {
+    return get().search;
+  },
+  enqueueCover: (coverId) => get().enqueueCover(coverId),
+};
