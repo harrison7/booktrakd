@@ -22,7 +22,7 @@ export function DeleteEntry({ id, username }: { id: number; username: string }) 
       onClick={() => {
         if (confirm("Delete this diary entry? This can't be undone.")) remove.mutate({ id });
       }}
-      className="mt-10 text-xs text-muted hover:text-like"
+      className="text-xs text-muted hover:text-like"
     >
       Delete entry
     </button>

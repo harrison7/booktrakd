@@ -17,64 +17,92 @@ const FORMATS = [
   ["audiobook", "Audiobook"],
 ] as const;
 
-/** "I read…" modal: date, rating, like, reread/DNF, format, review, tags. */
+/** An existing diary entry, for editing. */
+export interface EditableEntry {
+  id: number;
+  finishedOn: string | null;
+  startedOn: string | null;
+  rating: number | null;
+  liked: boolean;
+  reread: boolean;
+  dnf: boolean;
+  format: string | null;
+  text: string | null;
+  spoilers: boolean;
+  tags: string[];
+}
+
+/**
+ * "I read…" modal: date, rating, like, reread/DNF, format, review, tags. Logs a new entry,
+ * or edits `entry` when given.
+ */
 export function LogDialog({
   open,
   onClose,
   book,
   defaults,
+  entry,
   onSaved,
 }: {
   open: boolean;
   onClose: () => void;
   book: { id: number; title: string };
-  defaults: { rating: number | null; liked: boolean; reread: boolean };
+  defaults?: { rating: number | null; liked: boolean; reread: boolean };
+  entry?: EditableEntry;
   onSaved: (shelf: ShelfState) => void;
 }) {
   const trpc = useTRPC();
   const ref = useRef<HTMLDialogElement>(null);
   const [hasDate, setHasDate] = useState(true);
   const [finishedOn, setFinishedOn] = useState(today);
-  const [rating, setRating] = useState(defaults.rating);
-  const [liked, setLiked] = useState(defaults.liked);
-  const [reread, setReread] = useState(defaults.reread);
+  const [rating, setRating] = useState<number | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [reread, setReread] = useState(false);
   const [dnf, setDnf] = useState(false);
   const [format, setFormat] = useState("");
   const [review, setReview] = useState("");
   const [spoilers, setSpoilers] = useState(false);
   const [tags, setTags] = useState("");
 
+  // Reset each time it opens: to the entry being edited, or to the book's current state.
+  const reset = () => {
+    setHasDate(entry ? entry.finishedOn != null : true);
+    setFinishedOn(entry?.finishedOn ?? today());
+    setRating(entry ? entry.rating : (defaults?.rating ?? null));
+    setLiked(entry ? entry.liked : (defaults?.liked ?? false));
+    setReread(entry ? entry.reread : (defaults?.reread ?? false));
+    setDnf(entry?.dnf ?? false);
+    setFormat(entry?.format ?? "");
+    setReview(entry?.text ?? "");
+    setSpoilers(entry?.spoilers ?? false);
+    setTags(entry?.tags.join(", ") ?? "");
+  };
+  const resetRef = useRef(reset);
+  resetRef.current = reset;
+
   useEffect(() => {
     const dialog = ref.current;
     if (open && !dialog?.open) {
-      // Reset to the book's current state each time it opens.
-      setRating(defaults.rating);
-      setLiked(defaults.liked);
-      setReread(defaults.reread);
-      setFinishedOn(today());
+      resetRef.current();
       dialog?.showModal();
     }
     if (!open && dialog?.open) dialog.close();
-  }, [open, defaults.rating, defaults.liked, defaults.reread]);
+  }, [open]);
 
-  const create = useMutation(
-    trpc.entries.create.mutationOptions({
-      onSuccess: ({ shelf }) => {
-        onSaved(shelf);
-        setReview("");
-        setTags("");
-        setSpoilers(false);
-        setDnf(false);
-        onClose();
-      },
-    }),
-  );
+  const onSuccess = ({ shelf }: { shelf: ShelfState }) => {
+    onSaved(shelf);
+    onClose();
+  };
+  const create = useMutation(trpc.entries.create.mutationOptions({ onSuccess }));
+  const update = useMutation(trpc.entries.update.mutationOptions({ onSuccess }));
+  const save = entry ? update : create;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    create.mutate({
-      workId: book.id,
+    const values = {
       finishedOn: hasDate ? finishedOn : null,
+      // The dialog has no start date, so keep any the entry already has (e.g. from an import).
+      startedOn: entry?.startedOn ?? null,
       rating,
       liked,
       reread,
@@ -86,7 +114,9 @@ export function LogDialog({
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-    });
+    };
+    if (entry) update.mutate({ id: entry.id, ...values });
+    else create.mutate({ workId: book.id, ...values });
   };
 
   return (
@@ -98,7 +128,9 @@ export function LogDialog({
       <form onSubmit={submit} className="flex flex-col gap-4 p-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted">I read…</p>
+            <p className="text-xs uppercase tracking-wider text-muted">
+              {entry ? "Edit entry" : "I read…"}
+            </p>
             <h2 className="font-serif text-2xl">{book.title}</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="text-muted">
@@ -189,15 +221,15 @@ export function LogDialog({
           </label>
         </div>
 
-        {create.error && <p className="text-sm text-like">{create.error.message}</p>}
+        {save.error && <p className="text-sm text-like">{save.error.message}</p>}
 
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={create.isPending}
+            disabled={save.isPending}
             className="rounded bg-read px-5 py-2 font-semibold text-bg hover:brightness-110 disabled:opacity-50"
           >
-            {create.isPending ? "Saving…" : "Save"}
+            {save.isPending ? "Saving…" : "Save"}
           </button>
         </div>
       </form>

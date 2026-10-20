@@ -127,19 +127,21 @@ export const entriesRouter = router({
           sql`insert into entry_tags (entry_id, tag) values (${input.id}, ${tag}) on conflict do nothing`,
         );
       }
+      // Like create: a finished log carries its rating and like onto the book (saving also
+      // refreshes the book's stats, e.g. its review count).
       const workId = Number(existing.work_id);
-      if (input.rating != null && !input.dnf) {
-        const current = await getShelf(ctx.db, ctx.user.id, workId);
-        await saveShelf(
-          ctx.db,
-          ctx.user.id,
-          workId,
-          applyShelfPatch(current, { rating: input.rating }),
-        );
-      } else {
-        await refreshWorkStats(ctx.db, workId);
-      }
-      return { id: input.id };
+      const current = await getShelf(ctx.db, ctx.user.id, workId);
+      const next = applyShelfPatch(
+        current,
+        input.dnf
+          ? {}
+          : {
+              ...(input.rating != null && { rating: input.rating }),
+              ...(input.liked && { liked: true }),
+            },
+      );
+      await saveShelf(ctx.db, ctx.user.id, workId, next);
+      return { id: input.id, shelf: next };
     }),
 
   delete: protectedProcedure

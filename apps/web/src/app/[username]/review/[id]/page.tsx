@@ -6,6 +6,7 @@ import { Stars } from "@/components/rating";
 import { SpoilerText } from "@/components/spoiler-text";
 import { orNotFound, serverApi } from "@/server/api";
 import { DeleteEntry } from "./delete-entry";
+import { EditEntry } from "./edit-entry";
 
 export default async function ReviewPage(props: PageProps<"/[username]/review/[id]">) {
   const { username, id } = await props.params;
@@ -68,7 +69,27 @@ export default async function ReviewPage(props: PageProps<"/[username]/review/[i
             ))}
           </ul>
         )}
-        {me?.username === entry.user.username && <DeleteEntry id={entry.id} username={username} />}
+        {me?.username === entry.user.username && (
+          <div className="mt-10 flex gap-5">
+            <EditEntry
+              entry={{
+                id: entry.id,
+                finishedOn: entry.finishedOn,
+                startedOn: entry.startedOn,
+                rating: entry.rating,
+                liked: entry.liked,
+                reread: entry.reread,
+                dnf: entry.dnf,
+                format: entry.format,
+                text: entry.text,
+                spoilers: entry.spoilers,
+                tags: entry.tags,
+              }}
+              book={{ id: entry.book.id, title: entry.book.title }}
+            />
+            <DeleteEntry id={entry.id} username={username} />
+          </div>
+        )}
       </article>
     </div>
   );

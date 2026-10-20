@@ -173,6 +173,38 @@ describe("diary entries", () => {
     await expect(alice.entries.get({ id })).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  it("only the author can edit an entry, and edits carry onto the book", async () => {
+    const alice = callerAs("alice");
+    const { id } = await alice.entries.create({
+      workId: duneId,
+      startedOn: "2026-09-01",
+      finishedOn: "2026-09-20",
+    });
+    const edit = { id, startedOn: "2026-09-01", finishedOn: "2026-09-21", tags: ["sci-fi"] };
+    await expect(callerAs("bob").entries.update(edit)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+
+    const { shelf } = await alice.entries.update({
+      ...edit,
+      rating: 9,
+      liked: true,
+      review: "Better the second time.",
+    });
+    expect(shelf).toMatchObject({ read: true, rating: 9, liked: true });
+
+    const entry = await alice.entries.get({ id });
+    expect(entry).toMatchObject({
+      startedOn: "2026-09-01",
+      finishedOn: "2026-09-21",
+      text: "Better the second time.",
+      tags: ["sci-fi"],
+    });
+    const book = await callerAs(null).catalog.work({ slug: "dune" });
+    expect(book.reviews.map((r) => r.id)).toContain(id);
+    await alice.entries.delete({ id });
+  });
+
   it("lists a diary newest first", async () => {
     const alice = callerAs("alice");
     await alice.entries.create({ workId: duneId, finishedOn: "2026-10-05" });
