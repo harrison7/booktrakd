@@ -85,6 +85,20 @@ pnpm cli worker                 # optional: caches covers locally as they're vie
 Readers can import their Goodreads or StoryGraph history at **Settings → Import**, and export
 their library and diary as CSV from the same page.
 
+## Deploying (prototype)
+
+The prototype runs on **Vercel** (website) with **Neon** Postgres, added through Vercel's
+Storage tab. Meilisearch and the cover worker aren't needed: search falls back to Postgres and
+uncached covers are served from Open Library.
+
+- Vercel project: Root Directory `apps/web`; every push to `main` deploys.
+- Production environment variables: `DATABASE_URL` (Neon's pooled URL, set by the
+  integration), `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` (the site's public URL).
+  Shared variables must be linked to the project, and changes apply from the next deploy.
+- The catalog was loaded once from a local import with `pg_dump` (excluding the `staging`
+  schema and all user data) and `pg_restore` into Neon's unpooled URL. Covers cached
+  locally were reset to `pending` so they're served from Open Library.
+
 ## Checks
 
 ```sh
