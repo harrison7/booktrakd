@@ -20,7 +20,12 @@ function optionalPair(id: string, secret: string) {
 }
 
 function createServices(): ApiDeps {
-  const { db } = createDb(required("DATABASE_URL"));
+  // On Vercel each function instance gets its own pool, and DATABASE_URL points at a
+  // connection pooler (Neon's PgBouncer): keep pools small and skip prepared statements.
+  const { db } = createDb(
+    required("DATABASE_URL"),
+    process.env.VERCEL ? { max: 2, prepare: false } : {},
+  );
   const auth = createAuth({
     db,
     secret: required("BETTER_AUTH_SECRET"),
