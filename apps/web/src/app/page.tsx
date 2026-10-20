@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { Cover, CoverGrid, GridBook } from "@/components/cover";
+import { Feed } from "@/components/feed";
 import { ShelvesProvider } from "@/components/quick-actions";
 import { serverApi } from "@/server/api";
 
 export default async function HomePage() {
   const api = await serverApi();
   const [me, popular] = await Promise.all([api.users.me(), api.catalog.popular({ limit: 36 })]);
-  const profile = me?.username ? await api.users.profile({ username: me.username }) : null;
+  const [profile, feed] = me?.username
+    ? await Promise.all([
+        api.users.profile({ username: me.username }),
+        api.social.feed({ limit: 8 }),
+      ])
+    : [null, null];
 
   return (
     <div>
@@ -60,6 +66,19 @@ export default async function HomePage() {
                 </ShelvesProvider>
               </Section>
             )}
+            {feed && (
+              <Section
+                title="New from friends"
+                more={feed.nextCursor != null ? { href: "/activity", label: "More" } : undefined}
+              >
+                <div className="max-w-3xl">
+                  <Feed
+                    items={feed.items}
+                    empty="Follow other readers from their profiles to see what they're reading here."
+                  />
+                </div>
+              </Section>
+            )}
           </>
         )}
         <Section title="Popular books">
@@ -88,11 +107,24 @@ function MaybeShelves({
   return signedIn ? <ShelvesProvider workIds={workIds}>{children}</ShelvesProvider> : children;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  more,
+  children,
+}: {
+  title: string;
+  more?: { href: "/activity"; label: string };
+  children: React.ReactNode;
+}) {
   return (
     <section className="mb-12">
-      <h2 className="mb-3 border-b border-border pb-1 text-xs uppercase tracking-wider text-muted">
+      <h2 className="mb-3 flex justify-between border-b border-border pb-1 text-xs uppercase tracking-wider text-muted">
         {title}
+        {more && (
+          <Link href={more.href} className="hover:text-text">
+            {more.label}
+          </Link>
+        )}
       </h2>
       {children}
     </section>

@@ -1,6 +1,6 @@
-import { sql } from "@booktrakd/db";
 import { rating } from "@booktrakd/validators";
 import { z } from "zod";
+import { syncShelfActivity } from "../lib/activity";
 import { applyShelfPatch, getShelf, saveShelf } from "../lib/shelf";
 import { protectedProcedure, router } from "../trpc";
 
@@ -27,24 +27,7 @@ export const shelfRouter = router({
       const next = applyShelfPatch(current, input.patch);
       await saveShelf(ctx.db, ctx.user.id, input.workId, next);
 
-      const verb =
-        input.patch.rating != null
-          ? "rated"
-          : input.patch.liked
-            ? "liked_work"
-            : input.patch.read
-              ? "read"
-              : input.patch.readingList
-                ? "added_to_reading_list"
-                : input.patch.currentlyReading
-                  ? "started_reading"
-                  : null;
-      if (verb) {
-        await ctx.db.execute(sql`
-          insert into activities (actor_id, verb, object_type, object_id, work_id)
-          values (${ctx.user.id}, ${verb}, 'work', ${String(input.workId)}, ${input.workId})
-        `);
-      }
+      await syncShelfActivity(ctx.db, ctx.user.id, input.workId, current, next);
       return next;
     }),
 });

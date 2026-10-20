@@ -9,6 +9,8 @@ const TABS = [
   ["/diary", "Diary"],
   ["/reviews", "Reviews"],
   ["/reading-list", "Reading list"],
+  ["/following", "Following"],
+  ["/followers", "Followers"],
 ] as const;
 
 export function ProfileTabs({ base }: { base: string }) {

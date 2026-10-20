@@ -15,6 +15,11 @@ export async function Header() {
           <Link href="/" className="hover:text-text">
             Books
           </Link>
+          {me?.username && (
+            <Link href="/activity" className="hover:text-text">
+              Activity
+            </Link>
+          )}
         </nav>
         <div className="ml-auto flex min-w-0 items-center gap-3">
           <SearchBox />

@@ -32,6 +32,7 @@ export const usersRouter = router({
       );
       if (!u) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
       const userId = u.id as string;
+      const viewer = ctx.user?.id ?? null;
       const year = new Date().getFullYear();
 
       const [counts, histogram, goal, favorites, reading, recent, reviews] = await Promise.all([
@@ -44,7 +45,15 @@ export const usersRouter = router({
             (select count(*) from entries
              where user_id = ${userId} and review_text is not null)::int as reviews,
             (select count(*) from user_works
-             where user_id = ${userId} and on_reading_list)::int as reading_list
+             where user_id = ${userId} and on_reading_list)::int as reading_list,
+            (select count(*) from follows where followee_id = ${userId})::int as followers,
+            (select count(*) from follows where follower_id = ${userId})::int as following,
+            exists(select 1 from follows
+                   where follower_id = ${viewer} and followee_id = ${userId}) as viewer_follows,
+            exists(select 1 from blocks
+                   where blocker_id = ${viewer} and blocked_id = ${userId}) as viewer_blocks,
+            exists(select 1 from blocks
+                   where blocker_id = ${userId} and blocked_id = ${viewer}) as blocks_viewer
         `),
         ctx.db.execute(sql`
           select array(
@@ -97,6 +106,14 @@ export const usersRouter = router({
           thisYear: Number(c.this_year ?? 0),
           reviews: Number(c.reviews ?? 0),
           readingList: Number(c.reading_list ?? 0),
+          followers: Number(c.followers ?? 0),
+          following: Number(c.following ?? 0),
+        },
+        /** How the signed-in viewer relates to this member (all false when signed out). */
+        viewer: {
+          follows: Boolean(c.viewer_follows),
+          blocks: Boolean(c.viewer_blocks),
+          blockedBy: Boolean(c.blocks_viewer),
         },
         histogram: ((rowsOf<Row>(histogram)[0]?.histogram as number[]) ?? []).map(Number),
         goal: rowsOf<Row>(goal)[0] ? { year, target: Number(rowsOf<Row>(goal)[0]?.target) } : null,

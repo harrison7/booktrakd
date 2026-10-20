@@ -3,6 +3,7 @@ import { rowsOf, sql } from "@booktrakd/db";
 import { bookFormat, rating } from "@booktrakd/validators";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { recordActivity, removeActivitiesFor, syncShelfActivity } from "../lib/activity";
 import { queryCards } from "../lib/cards";
 import { applyShelfPatch, getShelf, refreshWorkStats, saveShelf } from "../lib/shelf";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
@@ -101,11 +102,17 @@ export const entriesRouter = router({
       );
       await saveShelf(ctx.db, ctx.user.id, input.workId, next);
 
-      await ctx.db.execute(sql`
-        insert into activities (actor_id, verb, object_type, object_id, work_id)
-        values (${ctx.user.id}, ${review ? "reviewed" : "logged"}, 'entry', ${String(entryId)},
-                ${input.workId})
-      `);
+      // The entry stands in for the shelf change, so no separate "read"/"rated" activity.
+      await syncShelfActivity(ctx.db, ctx.user.id, input.workId, current, next, {
+        removalsOnly: true,
+      });
+      await recordActivity(
+        ctx.db,
+        ctx.user.id,
+        review ? "reviewed" : "logged",
+        { type: "entry", id: entryId },
+        input.workId,
+      );
       return { id: entryId, shelf: next };
     }),
 
@@ -141,6 +148,13 @@ export const entriesRouter = router({
             },
       );
       await saveShelf(ctx.db, ctx.user.id, workId, next);
+      await syncShelfActivity(ctx.db, ctx.user.id, workId, current, next, { removalsOnly: true });
+      // Adding or removing the review text turns a "logged" activity into "reviewed" or back.
+      await ctx.db.execute(sql`
+        update activities set verb = ${review ? "reviewed" : "logged"}
+        where object_type = 'entry' and object_id = ${String(input.id)}
+          and verb in ('logged', 'reviewed')
+      `);
       return { id: input.id, shelf: next };
     }),
 
@@ -149,9 +163,7 @@ export const entriesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await ownedEntry(ctx.db, input.id, ctx.user.id);
       await ctx.db.execute(sql`delete from entries where id = ${input.id}`);
-      await ctx.db.execute(sql`
-        delete from activities where object_type = 'entry' and object_id = ${String(input.id)}
-      `);
+      await removeActivitiesFor(ctx.db, { type: "entry", id: input.id });
       await refreshWorkStats(ctx.db, Number(existing.work_id));
       return { ok: true };
     }),

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FollowButton, ProfileMenu } from "@/components/follow-button";
 import { Avatar } from "@/components/header-client";
+import { serverApi } from "@/server/api";
 import { getProfile } from "./profile";
 import { ProfileTabs } from "./tabs";
 
@@ -11,6 +13,7 @@ export async function generateMetadata(props: LayoutProps<"/[username]">): Promi
 
 export default async function ProfileLayout(props: LayoutProps<"/[username]">) {
   const profile = await getProfile((await props.params).username);
+  const me = await (await serverApi()).users.me();
   const base = `/${profile.username}`;
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -32,6 +35,17 @@ export default async function ProfileLayout(props: LayoutProps<"/[username]">) {
                 Edit profile
               </Link>
             )}
+            {!profile.isMe && !profile.viewer.blockedBy && !profile.viewer.blocks && (
+              <FollowButton
+                username={profile.username}
+                following={profile.viewer.follows}
+                signedIn={!!me}
+                small
+              />
+            )}
+            {!profile.isMe && me && (
+              <ProfileMenu username={profile.username} blocking={profile.viewer.blocks} />
+            )}
           </div>
           <p className="text-sm text-muted">
             @{profile.username}
@@ -47,13 +61,15 @@ export default async function ProfileLayout(props: LayoutProps<"/[username]">) {
           </p>
           {profile.bio && <p className="mt-2 max-w-2xl text-sm">{profile.bio}</p>}
         </div>
-        <dl className="flex gap-6 text-center">
+        <dl className="flex flex-wrap gap-x-6 gap-y-3 text-center">
           {(
             [
               ["Books", profile.counts.read, `${base}/books`],
               ["This year", profile.counts.thisYear, `${base}/diary`],
               ["Reviews", profile.counts.reviews, `${base}/reviews`],
               ["Reading list", profile.counts.readingList, `${base}/reading-list`],
+              ["Following", profile.counts.following, `${base}/following`],
+              ["Followers", profile.counts.followers, `${base}/followers`],
             ] as const
           ).map(([label, value, href]) => (
             <Link key={label} href={href as never} className="group">

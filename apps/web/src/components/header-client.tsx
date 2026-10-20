@@ -47,6 +47,7 @@ export function UserMenu({ username, name }: { username: string; name: string })
     [`/${username}/diary`, "Diary"],
     [`/${username}/reviews`, "Reviews"],
     [`/${username}/reading-list`, "Reading list"],
+    [`/${username}/following`, "Network"],
     ["/settings", "Settings"],
   ] as const;
 
